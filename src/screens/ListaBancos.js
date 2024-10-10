@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react"
-import { fetchBancos } from "../services/api";
+import { fetchBancos, fetchBancosAlmacenado, limpiarAlmacenamiento } from "../services/api";
 import { FlatList, Text, View } from "react-native";
+import Loader from "../components/LoaderIcon/Loader";
+import BotonC from "../components/Button/Boton";
+import CardsBancos from "../components/CardsBancos/Cards";
+import { styles } from "./styles";
 
 const ListaBancosScreen = () => {
     const [isBancos, setBancos] = useState([]);
@@ -11,23 +15,52 @@ const ListaBancosScreen = () => {
     }, []);
 
     const CargaDeBancos = async () => {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
         try {
             const data = await fetchBancos();
             setBancos(data);
         } catch (error) {
-            console.log('Error al llamar la peticion: ', error)
+            console.error('Error al llamar la peticion: ', error)
         } finally {
             setLoading(false);
         }
     };
 
-    if (isLoading) {
+    const CargaDeBancosAlmacenados = async () => {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            const data = await fetchBancosAlmacenado();
+            setBancos(data);
+        } catch (error) {
+            console.error('Error al llamar la peticion: ', error)
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const BorrarBancosAlmacenados = async () => {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            const data = await limpiarAlmacenamiento();
+            setBancos(data);
+        } catch (error) {
+            console.error('Error al llamar la peticion: ', error)
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderItemBancos = ({ item }) => {
         return (
-            <View>
-                <Text>
-                    Cargando...
-                </Text>
-            </View>
+            <CardsBancos
+                img={item?.url}
+                nombre={item?.bankName}
+                descripcion={item?.description}
+                edad={item?.age}
+            />
         )
     }
 
@@ -35,18 +68,22 @@ const ListaBancosScreen = () => {
         <FlatList
             data={isBancos}
             keyExtractor={(item) => item.bankName}
-            renderItem={({ item }) => (
-                <View>
-                    <Text>{item.bankName}</Text>
-                    <Text>{item.description}</Text>
-                    <Text>Edad: {item.age}</Text>
-                    <Text>{item.url}</Text>
+            renderItem={renderItemBancos}
+            ListEmptyComponent={
+                <View style={styles.boxText}>
+                    <Text style={styles.textNoInfo}> No hay informacion de bancos, por favor inicie una consulta</Text>
+                    <Loader visible={isLoading} />
                 </View>
-            )}
+            }
+            ListFooterComponent={
+                <>
+                    <BotonC onPress={CargaDeBancosAlmacenados} text={'Iniciar Consulta'} />
+                    <BotonC onPress={BorrarBancosAlmacenados} text={'Limpiar Cache'} />
+                    <Loader visible={isLoading} />
+                </>
+            }
         />
     );
-
-
 };
 
 export default ListaBancosScreen;
